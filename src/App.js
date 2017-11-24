@@ -1,15 +1,34 @@
 import React, { Component } from 'react';
 import './App.css';
 import { addListener, removeListener, isAuthorized } from './AuthorizeApi';
-import { Link, Route } from 'react-router-dom';
+import { NavLink, Route, Switch, Redirect } from 'react-router-dom';
 import Home from './Home';
 import Public from './Public';
 import Auth from './Auth';
+import Private from './Private';
 
 class App extends Component {
   state = {
     isAuthorized: false
   };
+
+  get menu() {
+    return [
+      {
+        to: `/`,
+        label: `Главная`
+      }, {
+        to: `/public`,
+        label: `Публичная страница`
+      }, {
+        to: `/private`,
+        label: `Приватная страница`
+      }, {
+        to: `/auth`,
+        label: `Вход`
+      }
+    ]
+  }
 
   componentDidMount() {
     addListener(this.handleAuthorize);
@@ -24,23 +43,36 @@ class App extends Component {
   };
 
   render() {
+    const { isAuthorized } = this.state;
     return (
       <div>
-        <ul>
-          <li>
-            <Link to="/">Главная</Link>
-          </li>
-          <li>
-            <Link to="/public">Публичная страница</Link>
-          </li>
-          <li>
-            <Link to="/auth">Войти</Link>
-          </li>
+        <ul className="nav">
+          {
+            this.menu.map((item, index) => (
+              <li key={index}>
+                <NavLink
+                  exact
+                  activeClassName="selected"
+                  to={item.to}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))
+          }
         </ul>
         <hr />
-        <Route exact path="/" component={Home} />
-        <Route exact path="/public" component={Public} />
-        <Route exact path="/auth" component={Auth} />
+        <Switch>
+          <Route exact path="/" component={Home} />
+          <Route path="/public" component={Public} />
+          <Route path="/auth" component={Auth} onAuth={this.handleAuthorize} />
+          {
+            isAuthorized ?
+              <Route path="/private" component={Private} /> :
+              <Redirect from="/private" to="/auth" />
+          }
+          {!isAuthorized ? <Redirect from="*" to="/" /> : null}
+        </Switch>
       </div>
     );
   }
